@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="RIDER_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$/../../../../../DebugUtils/Include" />
+    <content url="file://$MODULE_DIR$/../../../../../DebugUtils/Source" />
+    <content url="file://$MODULE_DIR$/../../../../../Detour/Include" />
+    <content url="file://$MODULE_DIR$/../../../../../Detour/Source" />
+    <content url="file://$MODULE_DIR$/../../../../../DetourCrowd/Include" />
+    <content url="file://$MODULE_DIR$/../../../../../DetourCrowd/Source" />
+    <content url="file://$MODULE_DIR$/../../../../../DetourTileCache/Include" />
+    <content url="file://$MODULE_DIR$/../../../../../DetourTileCache/Source" />
+    <content url="file://$MODULE_DIR$/../../../../../Recast/Include" />
+    <content url="file://$MODULE_DIR$/../../../../../Recast/Source" />
+    <content url="file://$MODULE_DIR$/../.." />
+    <content url="file://$MODULE_DIR$/../../../../Contrib/fastlz" />
+    <content url="file://$MODULE_DIR$/../../../../Include" />
+    <content url="file://$MODULE_DIR$/../../../../Source" />
+    <content url="file://$MODULE_DIR$/../../../../../Tests" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
