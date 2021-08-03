@@ -1,0 +1,1 @@
+Android 打包时注意将整个RecastNav文件夹移动至NDK samples目录中 并执行#ndk编译命令 ndk-build all -B
