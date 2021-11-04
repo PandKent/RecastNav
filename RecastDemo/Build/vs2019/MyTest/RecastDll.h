@@ -5,6 +5,7 @@
 #else
 #define DllExport
 #endif
+#include "CRecastHelper.h"
 
 extern "C"
 {
@@ -119,14 +120,19 @@ extern "C"
 	/// </summary>
 	/// <param name="id">地图Id</param>
 	/// <param name="pos">坐标，float[3]</param>
+	/// <param name="maxDistance">采样半径 float</param>
 	/// <returns>返回采样结果：1u << 30 - 成功；1u << 31 - 失败；1u << 29 -
 	/// 采样未完成，详细内容见：DetourStatus.h</returns>
-	DllExport int recast_sampleposition(int id, const float* pos);
+	DllExport int recast_sampleposition(int id, const float* pos, float maxDistance);
 
 	/// <summary>
 	/// 获取采样点，配合recast_sampleposition()函数使用
 	/// </summary>
 	/// <param name="id">地图Id</param>
 	/// <returns>返回采样点坐标</returns>
-	DllExport float* recast_getsampleposition(int id);
+	DllExport float* recast_getSamplePosition(int id);
+
+	DllExport bool recast_prepareCSharpNavMeshData(int id);
+
+	DllExport NavMeshOutData* recast_getCSharpNavMeshData(int id);
 }

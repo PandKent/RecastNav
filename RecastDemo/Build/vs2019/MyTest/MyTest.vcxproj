@@ -221,6 +221,7 @@
       <SDLCheck>true</SDLCheck>
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
+    <ClCompile Include="fastlz.c" />
     <ClCompile Include="MyTest.cpp" />
     <ClCompile Include="RecastDll.cpp">
       <AssemblerOutput>NoListing</AssemblerOutput>
@@ -293,6 +294,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CRecastHelper.h" />
+    <ClInclude Include="fastlz.h" />
     <ClInclude Include="RecastDll.h" />
     <ClInclude Include="tools.h" />
   </ItemGroup>
@@ -300,6 +302,10 @@
     <ProjectReference Include="..\Detour.vcxproj">
       <Project>{18fee2ad-04a0-0d84-ed5a-21d8d99b94d4}</Project>
       <Name>Detour</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DetourTileCache.vcxproj">
+      <Project>{1ab411d3-863f-7f97-8f50-028cfb5adb97}</Project>
+      <Name>DetourTileCache</Name>
     </ProjectReference>
     <ProjectReference Include="..\Recast.vcxproj">
       <Project>{a7a881ce-934a-aca4-7c05-c0f8684633f5}</Project>

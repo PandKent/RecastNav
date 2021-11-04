@@ -15,7 +15,7 @@
 
 #include "tools.h"
 #include "RecastDll.h"
-#include "../RecastNavDll/RecastDll.h"
+// #include "../RecastNavDll/RecastDll.h"
 std::string _strLastError;
 //
 // int DoRecast(std::string mapPathName, std::string posFrom, std::string posTo);
@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
 	else
 	{
 		std::string strRet = std::to_string(ret);
-		std::string error = "Recast工具 错误(" + strRet + ") - " + _strLastError;
+		std::string error = "Recast Tool Error(" + strRet + ") - " + _strLastError;
 		std::cout<<(error.c_str());
 		return ret;
 	}
@@ -76,7 +76,7 @@ int DoTest()
 	// 1，初始化
 	 if (!recast_init())
 	 {
-	 	_strLastError = "Recast 初始化失败！";
+	 	_strLastError = "Recast init Error!";
 	 	return -11;
 	 }
 	
@@ -94,9 +94,9 @@ int DoTest()
 	//
 
 	std::cout << "fopen_s 111" << std::endl;
-	std::string strPath = "D:/YooZoo/recastnavigation/RecastDemo/Bin/solo_navmesh.bin";
+	std::string strPath = "D:/Kent/RecastNav.git/RecastDemo/Bin/Start_Ori.bin";
 	FILE *fp = NULL;
-	char *buff = new char[6*1024];
+	char *buff = new char[1024*1024];
 	
 	std::cout << "fopen_s" << std::endl;
 	errno_t error = fopen_s(&fp, strPath.c_str(), "rb");
@@ -106,49 +106,64 @@ int DoTest()
 		return 0;
 	}
 	
-	fgets(buff, 6*1024, (FILE*)fp);
+	fgets(buff, 1024*1024, (FILE*)fp);
 	std::cout << "len:" <<  buff[8] << std::endl;
 	unsigned char * a = (unsigned char *)buff;
 
    
 	// 2，加载地图101
 	int id1 = 101;
-	if (!recast_loadmapbybytes(id1, (unsigned char*)buff))
-	{	
-		_strLastError = "地图创建失败";
+	// if (!recast_loadmapbybytes(id1, (unsigned char*)buff))
+	// {	
+	// 	_strLastError = "Map Bytes load Error";
+	// 	return -12;
+	// }
+
+	const char* path = strPath.c_str();
+	if (!recast_loadmap(id1, path))
+	{
+		_strLastError = "Map Bytes load Error";
 		return -12;
 	}
+
+	if (!recast_prepareCSharpNavMeshData(id1))
+	{
+		_strLastError = "CSharpData Create Error";
+		return -13;
+	}
+
+	recast_getCSharpNavMeshData(id1);
 	
 	// float* pos = new float[3]{-15, 0, 0};
-	float pos[3] = {-15, 0, 0};
+	// float pos[3] = {-15, 0, 0};
 	// if (!recast_sampleposition(id1,pos))
 	// {
 	// 	_strLastError = "Sample Position Fail";
 	// 	return -13;
 	// }
-	Tools::dtStatus status;
-		status = recast_sampleposition(id1,pos);
-		if (Tools::dtStatusFailed(status))
-		{
-			int statusDetail = status & Tools::DT_STATUS_DETAIL_MASK;
-			std::string strDetail = std::to_string(statusDetail);
-			_strLastError = "Error Code<" + strDetail + ">";
-			if (statusDetail == Tools::DT_COORD_INVALID)
-			{
-				// char szFrom[256], szTo[256];
-				// sprintf_s(szFrom, sizeof(szFrom), "%f, %f, %f", spos[0], spos[1], spos[2]);
-				// sprintf_s(szTo, sizeof(szTo), "%f, %f, %f", epos[0], epos[1], epos[2]);
-				// std::string strFrom = szFrom, strTo = szTo;
-				// _strLastError += " - 坐标非法！From<" + strFrom + "> To<" + strTo + ">";
-				_strLastError += " - param illegal";
-			}
-			return -20;
-		}
-		else if (Tools::dtStatusInProgress(status))
-		{
-			_strLastError += " - sample during processing!";
-			return -21;
-		}
+	// Tools::dtStatus status;
+		// status = recast_sampleposition(id1,pos);
+		// if (Tools::dtStatusFailed(status))
+		// {
+		// 	int statusDetail = status & Tools::DT_STATUS_DETAIL_MASK;
+		// 	std::string strDetail = std::to_string(statusDetail);
+		// 	_strLastError = "Error Code<" + strDetail + ">";
+		// 	if (statusDetail == Tools::DT_COORD_INVALID)
+		// 	{
+		// 		// char szFrom[256], szTo[256];
+		// 		// sprintf_s(szFrom, sizeof(szFrom), "%f, %f, %f", spos[0], spos[1], spos[2]);
+		// 		// sprintf_s(szTo, sizeof(szTo), "%f, %f, %f", epos[0], epos[1], epos[2]);
+		// 		// std::string strFrom = szFrom, strTo = szTo;
+		// 		// _strLastError += " - 坐标非法！From<" + strFrom + "> To<" + strTo + ">";
+		// 		_strLastError += " - param illegal";
+		// 	}
+		// 	return -20;
+		// }
+		// else if (Tools::dtStatusInProgress(status))
+		// {
+		// 	_strLastError += " - sample during processing!";
+		// 	return -21;
+		// }
 
 		//
 		// std::string strPath = "D:\YooZoo\recastnavigation\RecastDemo\Bin\solo_navmesh.bin";

@@ -8,9 +8,15 @@
 
 #include "../../../../Detour/Include/DetourCommon.h"
 #include "../../../../Detour/Include/DetourNavMesh.h"
+#include "../../../../Detour/Include/DetourNavMeshBuilder.h"
 #include "../../../../Detour/Include/DetourNavMeshQuery.h"
+#include "../../../../DetourTileCache/Include/DetourTileCache.h"
+#include "../../../../DetourTileCache/Include/DetourTileCacheBuilder.h"
 #include "../../../../Recast/Include/Recast.h"
-#include "../../../../Tests/catch.hpp"
+#include "fastlz.h"
+// #include "../../../../Tests/catch.hpp"
+// #include "../../../Contrib/fastlz/fastlz.h"
+// #include "../../../Include/InputGeom.h"
 
 
 using namespace std;
@@ -32,6 +38,9 @@ enum SamplePolyFlags
 static const int NAVMESHSET_MAGIC = 'M' << 24 | 'S' << 16 | 'E' << 8 | 'T'; //'MSET';
 static const int NAVMESHSET_VERSION = 1;
 
+static const int TILECACHESET_MAGIC = 'T' << 24 | 'S' << 16 | 'E' << 8 | 'T'; //'MSET';
+static const int TILECACHESET_VERSION = 1;
+
 struct NavMeshSetHeader
 {
 	int magic;
@@ -40,10 +49,152 @@ struct NavMeshSetHeader
 	dtNavMeshParams params;
 };
 
+struct TileCacheSetHeader
+{
+	int magic;
+	int version;
+	int numTiles;
+	dtNavMeshParams meshParams;
+	dtTileCacheParams cacheParams;
+};
+
 struct NavMeshTileHeader
 {
 	dtTileRef tileRef;
 	int dataSize;
+};
+
+struct TileCacheTileHeader
+{
+	dtCompressedTileRef tileRef;
+	int dataSize;
+};
+
+struct LinearAllocator : public dtTileCacheAlloc
+{
+	unsigned char* buffer;
+	size_t capacity;
+	size_t top;
+	size_t high;
+	
+	LinearAllocator(const size_t cap) : buffer(0), capacity(0), top(0), high(0)
+	{
+		resize(cap);
+	}
+	
+	~LinearAllocator()
+	{
+		dtFree(buffer);
+	}
+
+	void resize(const size_t cap)
+	{
+		if (buffer) dtFree(buffer);
+		buffer = (unsigned char*)dtAlloc(cap, DT_ALLOC_PERM);
+		capacity = cap;
+	}
+	
+	virtual void reset()
+	{
+		high = dtMax(high, top);
+		top = 0;
+	}
+	
+	virtual void* alloc(const size_t size)
+	{
+		if (!buffer)
+			return 0;
+		if (top+size > capacity)
+			return 0;
+		unsigned char* mem = &buffer[top];
+		top += size;
+		return mem;
+	}
+	
+	virtual void free(void* /*ptr*/)
+	{
+		// Empty
+	}
+};
+
+struct MeshProcess : public dtTileCacheMeshProcess
+{/*
+	InputGeom* m_geom;
+
+	inline MeshProcess() : m_geom(0)
+	{
+	}
+
+	inline void init(InputGeom* geom)
+	{
+		m_geom = geom;
+	}
+	
+	virtual void process(struct dtNavMeshCreateParams* params,
+						 unsigned char* polyAreas, unsigned short* polyFlags)
+	{
+		// Update poly flags from areas.
+		for (int i = 0; i < params->polyCount; ++i)
+		{
+			// if (polyAreas[i] == DT_TILECACHE_WALKABLE_AREA)
+			// 	polyAreas[i] = SAMPLE_POLYAREA_GROUND;
+			//
+			// if (polyAreas[i] == SAMPLE_POLYAREA_GROUND ||
+			// 	polyAreas[i] == SAMPLE_POLYAREA_GRASS ||
+			// 	polyAreas[i] == SAMPLE_POLYAREA_ROAD)
+			// {
+			// 	polyFlags[i] = SAMPLE_POLYFLAGS_WALK;
+			// }
+			// else if (polyAreas[i] == SAMPLE_POLYAREA_WATER)
+			// {
+			// 	polyFlags[i] = SAMPLE_POLYFLAGS_SWIM;
+			// }
+			// else if (polyAreas[i] == SAMPLE_POLYAREA_DOOR)
+			// {
+			// 	polyFlags[i] = SAMPLE_POLYFLAGS_WALK | SAMPLE_POLYFLAGS_DOOR;
+			// }
+		}
+
+		// Pass in off-mesh connections.
+		if (m_geom)
+		{
+			// params->offMeshConVerts = m_geom->getOffMeshConnectionVerts();
+			// params->offMeshConRad = m_geom->getOffMeshConnectionRads();
+			// params->offMeshConDir = m_geom->getOffMeshConnectionDirs();
+			// params->offMeshConAreas = m_geom->getOffMeshConnectionAreas();
+			// params->offMeshConFlags = m_geom->getOffMeshConnectionFlags();
+			// params->offMeshConUserID = m_geom->getOffMeshConnectionId();
+			// params->offMeshConCount = m_geom->getOffMeshConnectionCount();	
+		}
+	}
+	*/
+	virtual void process(struct dtNavMeshCreateParams* params,
+                         unsigned char* polyAreas, unsigned short* polyFlags)
+	{
+		
+	}
+};
+
+struct FastLZCompressor : public dtTileCacheCompressor
+{
+	virtual int maxCompressedSize(const int bufferSize)
+	{
+		return (int)(bufferSize* 1.05f);
+	}
+	
+	virtual dtStatus compress(const unsigned char* buffer, const int bufferSize,
+                              unsigned char* compressed, const int /*maxCompressedSize*/, int* compressedSize)
+	{
+		*compressedSize = fastlz_compress((const void *const)buffer, bufferSize, compressed);
+		return DT_SUCCESS;
+	}
+	
+	virtual dtStatus decompress(const unsigned char* compressed, const int compressedSize,
+                                unsigned char* buffer, const int maxBufferSize, int* bufferSize)
+	{
+		*bufferSize = fastlz_decompress(compressed, compressedSize, buffer, maxBufferSize);
+		return *bufferSize < 0 ? DT_FAILURE : DT_SUCCESS;
+	}
 };
 
 dtNavMesh* loadMapByBytes(const unsigned char* binary)
@@ -128,6 +279,7 @@ dtNavMesh* loadMapByBytes(const unsigned char* binary)
 
 dtNavMesh* loadMap(const char* path)
 {
+	/*
 	FILE* fp = NULL;
 	errno_t error = fopen_s(&fp, path, "rb");
 	if (!fp) return 0;
@@ -195,6 +347,97 @@ dtNavMesh* loadMap(const char* path)
 	fclose(fp);
 
 	return mesh;
+	*/
+	FILE* fp = NULL;
+	errno_t error = fopen_s(&fp, path, "rb");
+	if (!fp) return 0;
+	TileCacheSetHeader header;
+	size_t headerReadReturnCode = fread(&header, sizeof(TileCacheSetHeader), 1, fp);
+	if( headerReadReturnCode != 1)
+	{
+		// Error or early EOF
+		fclose(fp);
+		return 0;
+	}
+	if (header.magic != TILECACHESET_MAGIC)
+	{
+		fclose(fp);
+		return 0;
+	}
+	if (header.version != TILECACHESET_VERSION)
+	{
+		fclose(fp);
+		return 0;
+	}
+	
+	dtNavMesh* m_navMesh = dtAllocNavMesh();
+	if (!m_navMesh)
+	{
+		fclose(fp);
+		return 0;
+	}
+	dtStatus status = m_navMesh->init(&header.meshParams);
+	if (dtStatusFailed(status))
+	{
+		fclose(fp);
+		return 0;
+	}
+
+	dtTileCache* m_tileCache = dtAllocTileCache();
+	if (!m_tileCache)
+	{
+		fclose(fp);
+		return 0;
+	}
+	// m_talloc = new LinearAllocator(32000);
+	// m_tcomp = new FastLZCompressor;
+	// m_tmproc = new MeshProcess;
+	status = m_tileCache->init(&header.cacheParams, new LinearAllocator(32000), new FastLZCompressor, new MeshProcess);
+	if (dtStatusFailed(status))
+	{
+		fclose(fp);
+		return 0;
+	}
+		
+	// Read tiles.
+	for (int i = 0; i < header.numTiles; ++i)
+	{
+		TileCacheTileHeader tileHeader;
+		size_t tileHeaderReadReturnCode = fread(&tileHeader, sizeof(tileHeader), 1, fp);
+		if( tileHeaderReadReturnCode != 1)
+		{
+			// Error or early EOF
+			fclose(fp);
+			return 0;
+		}
+		if (!tileHeader.tileRef || !tileHeader.dataSize)
+			break;
+
+		unsigned char* data = (unsigned char*)dtAlloc(tileHeader.dataSize, DT_ALLOC_PERM);
+		if (!data) break;
+		memset(data, 0, tileHeader.dataSize);
+		size_t tileDataReadReturnCode = fread(data, tileHeader.dataSize, 1, fp);
+		if( tileDataReadReturnCode != 1)
+		{
+			// Error or early EOF
+			dtFree(data);
+			fclose(fp);
+			return 0;
+		}
+		
+		dtCompressedTileRef tile = 0;
+		dtStatus addTileStatus = m_tileCache->addTile(data, tileHeader.dataSize, DT_COMPRESSEDTILE_FREE_DATA, &tile);
+		if (dtStatusFailed(addTileStatus))
+		{
+			dtFree(data);
+		}
+
+		if (tile)
+			m_tileCache->buildNavMeshTile(tile, m_navMesh);
+	}
+	
+	fclose(fp);
+	return m_navMesh;
 }
 
 inline bool inRange(const float* v1, const float* v2, const float r, const float h)
@@ -372,7 +615,23 @@ CRecast::CRecast()
 {
 	m_navMesh = NULL;
 	m_navQuery = NULL;
+	outData.numOfF = 0;
+	outData.numOfV = 0;
+	outData.faces = NULL;
+	outData.verts = NULL;
 }
+
+CRecast::~CRecast()
+{
+	delete(m_navMesh);
+	m_navMesh = NULL;
+	delete []outData.faces;
+	outData.faces = NULL;
+	delete []outData.verts;
+	outData.verts = NULL;
+	
+}
+
 
 bool CRecast::LoadMap(const char* path)
 {
@@ -428,9 +687,8 @@ dtStatus CRecast::FindPath(const float* spos, const float* epos)
 	return status;
 }
 
-dtStatus CRecast::SamplePosition(const float* spos)
+dtStatus CRecast::SamplePosition(const float* spos, float maxDistance)
 {
-	std::cout<<"spos: "<<spos[0]<<", "<<spos[1]<<", "<<spos[2]<<std::endl;
 	m_filter.setIncludeFlags(SAMPLE_POLYFLAGS_ALL ^ SAMPLE_POLYFLAGS_DISABLED);
 	m_filter.setExcludeFlags(0);
 
@@ -438,13 +696,12 @@ dtStatus CRecast::SamplePosition(const float* spos)
 
 	if (!m_startRef)
 	{
-		std::cout<<m_startRef<<std::endl;
 		return DT_FAILURE| DT_COORD_INVALID;
 	}
 	
 	dtPolyRef ref;
 	float pt[3];
-	dtStatus status = m_navQuery->findRandomPointAroundCircle(m_startRef, spos, 10, &m_filter, frand, &ref, pt);
+	dtStatus status = m_navQuery->findRandomPointAroundCircle(m_startRef, spos, maxDistance, &m_filter, frand, &ref, pt);
 	memcpy(m_samplePos, pt, sizeof(m_samplePos));
 	return status;
 }
@@ -659,6 +916,147 @@ float* CRecast::fixPosition(const float* pos) {
 	//return m_fixPos;
 }
 
+
+
+bool CRecast::PrepareCSharpNavMeshData()
+{
+	if (!m_navMesh)
+	{
+		return false;
+	}
+	const dtNavMesh* mesh = m_navMesh;
+
+
+	// NavMeshOutData outData;
+
+	int count = 0;
+	for (int i = 0; i <  mesh->getMaxTiles(); ++i)
+	{
+		
+		const dtMeshTile* tile = mesh->getTile(i);
+		if (!tile->header) continue;
+		
+		for (int m = 0; m < tile->header->polyCount; ++m)
+		{
+			const dtPoly* p = &tile->polys[m];
+			if (p->getType() == DT_POLYTYPE_OFFMESH_CONNECTION)	// Skip off-mesh links.
+				continue;
+			const dtPolyDetail* pd = &tile->detailMeshes[m];
+			for (int j = 0; j < pd->triCount; ++j)
+			{
+				const unsigned char* t = &tile->detailTris[(pd->triBase+j)*4];
+				for (int k = 0; k < 3; ++k)
+				{
+					if (t[k] < p->vertCount)
+						count ++;
+					else
+						count ++;
+				}
+			}
+		}
+	}
+	outData.numOfV = count;
+	
+	if (outData.verts != NULL)
+	{
+		delete []outData.verts;
+		outData.verts = NULL;
+	}
+	outData.verts = new float[count*3];
+	
+	if (count%3 != 0)
+	{
+		return false;
+	}
+	outData.numOfF = count/3;
+	
+	if (outData.faces != NULL)
+	{
+		delete []outData.faces;
+		outData.faces = NULL;
+	}
+	outData.faces = new int[count];
+	// float* verts = new float[count];
+	// int* faces = new int[];
+	count = 0;
+	int faceIndex = 0;
+	for (int i = 0; i < mesh->getMaxTiles(); ++i)
+	{
+		const dtMeshTile* tile = mesh->getTile(i);
+		if (!tile->header) continue;
+		// drawMeshTile(dd, mesh, 0, tile, flags);
+		//dtPolyRef base = m_navMesh->getPolyRefBase(tile);
+	
+		// int tileNum = m_navMesh->decodePolyIdTile(base);
+	
+		for (int m = 0; m < tile->header->polyCount; ++m)
+		{
+			const dtPoly* p = &tile->polys[m];
+			if (p->getType() == DT_POLYTYPE_OFFMESH_CONNECTION)	// Skip off-mesh links.
+				continue;
+			
+			const dtPolyDetail* pd = &tile->detailMeshes[m];
+	
+			// unsigned int col;
+			// if (query && query->isInClosedList(base | (dtPolyRef)i))
+			// 	col = duRGBA(255,196,0,64);
+			// else
+			// {
+			// 	if (flags & DU_DRAWNAVMESH_COLOR_TILES)
+			// 		col = tileColor;
+			// 	else
+			// 		col = duTransCol(dd->areaToCol(p->getArea()), 64);
+			// }
+		
+			for (int j = 0; j < pd->triCount; ++j)
+			{
+				const unsigned char* t = &tile->detailTris[(pd->triBase+j)*4];
+				for (int k = 0; k < 3; ++k)
+				{
+					if (faceIndex >= (outData.numOfF * 3))
+					{
+						std::cout << "faceIndex invalid" << faceIndex << std::endl;
+						return false;
+					}
+					outData.faces[faceIndex] = faceIndex;
+					faceIndex ++;
+					if ((count+3) > outData.numOfV * 3)
+					{
+						std::cout << "count invalid" << count << std::endl;
+						return false;
+					}
+					
+					if (t[k] < p->vertCount)
+					{	
+						outData.verts[count] = tile->verts[p->verts[t[k]]*3];
+						count ++;
+						outData.verts[count] = tile->verts[p->verts[t[k]]*3 + 1];
+						count ++;
+						outData.verts[count] = tile->verts[p->verts[t[k]]*3 + 2];
+						count ++;
+					}
+						
+						// dd->vertex(, col);
+					else
+					{
+						outData.verts[count] = tile->detailVerts[(pd->vertBase+t[k]-p->vertCount)*3];
+						count ++;
+						outData.verts[count] = tile->detailVerts[(pd->vertBase+t[k]-p->vertCount)*3 + 1];
+						count ++;
+						outData.verts[count] = tile->detailVerts[(pd->vertBase+t[k]-p->vertCount)*3 + 2];
+						count ++;
+					}
+						// dd->vertex(&tile->detailVerts[(pd->vertBase+t[k]-p->vertCount)*3], col);
+				}
+			}
+		}
+	}
+	
+	return true;
+}
+
+
+
 /////////////////////////////////////////////////
 //	class CRecastHelper
 /////////////////////////////////////////////////
@@ -668,6 +1066,7 @@ CRecastHelper::~CRecastHelper()
 	for (map<int, CRecast*>::iterator iter = m_mapRecast.begin(); iter != m_mapRecast.end(); iter++)
 	{
 		delete iter->second;
+		iter->second = NULL;
 	}
 	m_mapRecast.clear();
 }

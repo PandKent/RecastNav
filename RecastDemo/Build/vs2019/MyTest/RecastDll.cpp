@@ -114,17 +114,37 @@ extern "C"
         return fixPos;
 	}
 
-	int recast_sampleposition(int id, const float* pos)
+	int recast_sampleposition(int id, const float* pos, float maxDistance)
 	{
 		if (!_helper || !_helper->Get(id)) return 0;
-		dtStatus status = _helper->Get(id)->SamplePosition(pos);
+		dtStatus status = _helper->Get(id)->SamplePosition(pos, maxDistance);
 		return status;
 	}
 
 	float* recast_getSamplePosition(int id)
 	{
 		if (!_helper || !_helper->Get(id)) return NULL;
+		float* result = _helper->Get(id)->GetSamplePosition();
+		if (result == NULL)
+		{
+			return nullptr;
+		}
 		return _helper->Get(id)->GetSamplePosition();
+	}
+
+	bool recast_prepareCSharpNavMeshData(int id)
+	{
+		if (!_helper || !_helper->Get(id)) return NULL;
+		bool result = _helper->Get(id)->PrepareCSharpNavMeshData();
+		return result;
+	}
+
+	NavMeshOutData* recast_getCSharpNavMeshData(int id)
+	{
+		// NavMeshOutData temp;
+		if (!_helper || !_helper->Get(id)) return NULL;
+		NavMeshOutData* result = _helper->Get(id)->GetCSharpNavMeshDataPtr();;
+		return result;
 	}
 }
 
