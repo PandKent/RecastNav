@@ -329,6 +329,21 @@ static bool rasterizeTri(const float* v0, const float* v1, const float* v2,
 			if (!addSpan(hf, x, y, ismin, ismax, area, flagMergeThr))
 				return false;
 		}
+
+		//剔除过小面，以免生成不必要的Voxel
+		// float maxD = 0;
+		// for (int i = 0; i < nvIn; ++i)
+		// {
+		// 	float d = cz+cs - in[i*3+2];
+		// 	if (maxD==0 || maxD < d)
+		// 	{
+		// 		maxD = d;
+		// 	}
+		// }
+		// if (maxD < 0.1)
+		// {
+		// 	break;
+		// }
 	}
 
 	return true;

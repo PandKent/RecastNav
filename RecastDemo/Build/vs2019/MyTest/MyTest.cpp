@@ -94,7 +94,8 @@ int DoTest()
 	//
 
 	std::cout << "fopen_s 111" << std::endl;
-	std::string strPath = "D:/Kent/RecastNav.git/RecastDemo/Bin/Start_Ori.bin";
+	// std::string strPath = "D:/Kent/RecastNav.git/RecastDemo/Bin/Start_Ori.bin";
+	std::string strPath = "D:/Kent/RecastNav.git/RecastDemo/Bin/solo_navmesh.bin";
 	FILE *fp = NULL;
 	char *buff = new char[1024*1024];
 	
@@ -113,34 +114,39 @@ int DoTest()
    
 	// 2，加载地图101
 	int id1 = 101;
-	// if (!recast_loadmapbybytes(id1, (unsigned char*)buff))
-	// {	
-	// 	_strLastError = "Map Bytes load Error";
-	// 	return -12;
-	// }
-
-	const char* path = strPath.c_str();
-	if (!recast_loadmap(id1, path))
-	{
+	if (!recast_loadmapbybytes(id1, (unsigned char*)buff))
+	{	
 		_strLastError = "Map Bytes load Error";
 		return -12;
 	}
 
-	if (!recast_prepareCSharpNavMeshData(id1))
-	{
-		_strLastError = "CSharpData Create Error";
-		return -13;
-	}
-
-	recast_getCSharpNavMeshData(id1);
-	
-	// float* pos = new float[3]{-15, 0, 0};
-	// float pos[3] = {-15, 0, 0};
-	// if (!recast_sampleposition(id1,pos))
+	// const char* path = strPath.c_str();
+	// if (!recast_loadmap(id1, path))
 	// {
-	// 	_strLastError = "Sample Position Fail";
+	// 	_strLastError = "Map Bytes load Error";
+	// 	return -12;
+	// }
+
+	// if (!recast_prepareCSharpNavMeshData(id1))
+	// {
+	// 	_strLastError = "CSharpData Create Error";
 	// 	return -13;
 	// }
+	//
+	// recast_getCSharpNavMeshData(id1);
+	
+	// float* pos = new float[3]{-15, 0, 0};
+	float pos[3] = {-16, 1.25, 2.45};
+	float* p = recast_getfixposition(id1,pos);
+	if (!recast_sampleposition(id1,p,50))
+	{
+		_strLastError = "Sample Position Fail";
+		return -13;
+	}
+	float* posF = recast_getSamplePosition(id1);
+	std::cout <<  posF[0] << std::endl;
+	std::cout <<  posF[1] << std::endl;
+	std::cout <<  posF[2] << std::endl;
 	// Tools::dtStatus status;
 		// status = recast_sampleposition(id1,pos);
 		// if (Tools::dtStatusFailed(status))

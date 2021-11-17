@@ -39,4 +39,7 @@ void duDebugDrawContours(struct duDebugDraw* dd, const struct rcContourSet& cset
 void duDebugDrawPolyMesh(struct duDebugDraw* dd, const struct rcPolyMesh& mesh);
 void duDebugDrawPolyMeshDetail(struct duDebugDraw* dd, const struct rcPolyMeshDetail& dmesh);
 
+//ASTAR
+void duDebugDrawAStarGrid(struct duDebugDraw* dd, const struct rcAStarGrid& asg,  const struct rcCompactHeightfield& chf);
+
 #endif // RECAST_DEBUGDRAW_H

@@ -250,6 +250,63 @@ void duDebugDrawCompactHeightfieldSolid(duDebugDraw* dd, const rcCompactHeightfi
 	dd->end();
 }
 
+//ASTAR
+void duDebugDrawAStarGrid(duDebugDraw* dd, const rcAStarGrid& asg, const rcCompactHeightfield& chf)
+{
+	if (!dd) return;
+	// const float cs = asg.cellSize;
+	const float cs = 10 * 0.1;
+	const float ch = 0.1;
+	const int offsetX = (int)(chf.width*0.1f);
+	dd->begin(DU_DRAW_QUADS);
+
+	for (int y = 0; y < asg.height; ++y)
+	{
+		for (int x = 0; x < asg.width; ++x)
+		{
+			const float fx = (float)chf.bmin[0] + x * cs + offsetX;
+			const float fz = (float)chf.bmin[2] + y * cs;
+			const rcAStarCell& c = asg.grids[x+y*asg.width];
+
+			// for (int i = c.gridIndex; i < asg.gridsCount; ++i)
+			// {
+				unsigned int color;
+				if (c.walkable)
+				{
+					color = duRGBA((int)(c.height*400),192,55,45);
+					// color = duRGBA(0,192,255,64);
+				}
+				else
+				{
+					color = duRGBA(0,0,0,45);
+				}
+				
+
+				const float fy = (float)chf.bmin[1] + 0.5f;
+				dd->vertex(fx, fy, fz, color);
+				dd->vertex(fx, fy, fz+cs, color);
+				dd->vertex(fx+cs, fy, fz+cs, color);
+				dd->vertex(fx+cs, fy, fz, color);
+			// }
+		}
+	}
+
+	dd->end();
+
+	// dd->begin(DU_DRAW_QUADS);
+	// unsigned int color;
+	// color = duRGBA(255,0,0,45);
+	// // dd->vertex(-0.5f - chf.bmin[0], 0, -0.5f - chf.bmin[2], color);
+	// // dd->vertex(-.5f - chf.bmin[0], 0, .5f - chf.bmin[2], color);
+	// // dd->vertex(.5f- chf.bmin[0], 0, .5f- chf.bmin[2], color);
+	// // dd->vertex(.5f- chf.bmin[0], 0, -.5f- chf.bmin[2], color);
+	// dd->vertex(-0.5f, 2, -0.5f, color);
+	// dd->vertex(-0.5f, 2, 0.5f, color);
+	// dd->vertex(0.5f, 2, 0.5f, color);
+	// dd->vertex(0.5f, 2, -0.5f, color);
+	// dd->end();
+}
+
 void duDebugDrawCompactHeightfieldRegions(duDebugDraw* dd, const rcCompactHeightfield& chf)
 {
 	if (!dd) return;

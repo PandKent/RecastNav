@@ -28,6 +28,10 @@ class Sample_SoloMesh : public Sample
 protected:
 	bool m_keepInterResults;
 	float m_totalBuildTimeMs;
+	
+	//ASTAR
+	bool m_buildAStar;
+	rcAStarGrid* m_asg;
 
 	unsigned char* m_triareas;
 	rcHeightfield* m_solid;

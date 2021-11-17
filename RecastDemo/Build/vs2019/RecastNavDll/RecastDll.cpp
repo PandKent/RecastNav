@@ -131,5 +131,20 @@ extern "C"
 		}
 		return _helper->Get(id)->GetSamplePosition();
 	}
+
+	bool recast_prepareCSharpNavMeshData(int id)
+	{
+		if (!_helper || !_helper->Get(id)) return NULL;
+		bool result = _helper->Get(id)->PrepareCSharpNavMeshData();
+		return result;
+	}
+
+	NavMeshOutData* recast_getCSharpNavMeshData(int id)
+	{
+		// NavMeshOutData temp;
+		if (!_helper || !_helper->Get(id)) return NULL;
+		NavMeshOutData* result = _helper->Get(id)->GetCSharpNavMeshDataPtr();;
+		return result;
+	}
 }
 

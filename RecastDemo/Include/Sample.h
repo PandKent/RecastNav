@@ -107,6 +107,8 @@ protected:
 	unsigned char m_navMeshDrawFlags;
 
 	float m_cellSize;
+	float m_gridSize;
+	float m_gridMinSize;
 	float m_cellHeight;
 	float m_agentHeight;
 	float m_agentRadius;
@@ -134,6 +136,7 @@ protected:
 	
 	dtNavMesh* loadAll(const char* path);
 	void saveAll(const char* path, const dtNavMesh* mesh);
+	void saveAStar(const char* path, const rcAStarGrid& asg);
 
 public:
 	Sample();

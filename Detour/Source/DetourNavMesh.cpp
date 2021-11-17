@@ -574,6 +574,7 @@ void dtNavMesh::baseOffMeshLinks(dtMeshTile* tile)
 		
 		// Find polygon to connect to.
 		const float* p = &con->pos[0]; // First vertex
+		
 		float nearestPt[3];
 		dtPolyRef ref = findNearestPolyInTile(tile, p, halfExtents, nearestPt);
 		if (!ref) continue;

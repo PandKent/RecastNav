@@ -372,7 +372,23 @@ CRecast::CRecast()
 {
 	m_navMesh = NULL;
 	m_navQuery = NULL;
+	outData.numOfF = 0;
+	outData.numOfV = 0;
+	outData.faces = NULL;
+	outData.verts = NULL;
 }
+
+CRecast::~CRecast()
+{
+	delete(m_navMesh);
+	m_navMesh = NULL;
+	delete []outData.faces;
+	outData.faces = NULL;
+	delete []outData.verts;
+	outData.verts = NULL;
+	
+}
+
 
 bool CRecast::LoadMap(const char* path)
 {
@@ -437,12 +453,16 @@ dtStatus CRecast::SamplePosition(const float* spos, float maxDistance)
 
 	if (!m_startRef)
 	{
+		std::cout << "FUK U1" << std::endl;
 		return DT_FAILURE| DT_COORD_INVALID;
 	}
 	
 	dtPolyRef ref;
 	float pt[3];
 	dtStatus status = m_navQuery->findRandomPointAroundCircle(m_startRef, spos, maxDistance, &m_filter, frand, &ref, pt);
+	std::cout << pt[0] << std::endl;
+	std::cout << pt[1] << std::endl;
+	std::cout << pt[2] << std::endl;
 	memcpy(m_samplePos, pt, sizeof(m_samplePos));
 	return status;
 }
@@ -657,6 +677,147 @@ float* CRecast::fixPosition(const float* pos) {
 	//return m_fixPos;
 }
 
+
+
+bool CRecast::PrepareCSharpNavMeshData()
+{
+	if (!m_navMesh)
+	{
+		return false;
+	}
+	const dtNavMesh* mesh = m_navMesh;
+
+
+	// NavMeshOutData outData;
+
+	int count = 0;
+	for (int i = 0; i <  mesh->getMaxTiles(); ++i)
+	{
+		
+		const dtMeshTile* tile = mesh->getTile(i);
+		if (!tile->header) continue;
+		
+		for (int m = 0; m < tile->header->polyCount; ++m)
+		{
+			const dtPoly* p = &tile->polys[m];
+			if (p->getType() == DT_POLYTYPE_OFFMESH_CONNECTION)	// Skip off-mesh links.
+				continue;
+			const dtPolyDetail* pd = &tile->detailMeshes[m];
+			for (int j = 0; j < pd->triCount; ++j)
+			{
+				const unsigned char* t = &tile->detailTris[(pd->triBase+j)*4];
+				for (int k = 0; k < 3; ++k)
+				{
+					if (t[k] < p->vertCount)
+						count ++;
+					else
+						count ++;
+				}
+			}
+		}
+	}
+	outData.numOfV = count;
+	
+	if (outData.verts != NULL)
+	{
+		delete []outData.verts;
+		outData.verts = NULL;
+	}
+	outData.verts = new float[count*3];
+	
+	if (count%3 != 0)
+	{
+		return false;
+	}
+	outData.numOfF = count/3;
+	
+	if (outData.faces != NULL)
+	{
+		delete []outData.faces;
+		outData.faces = NULL;
+	}
+	outData.faces = new int[count];
+	// float* verts = new float[count];
+	// int* faces = new int[];
+	count = 0;
+	int faceIndex = 0;
+	for (int i = 0; i < mesh->getMaxTiles(); ++i)
+	{
+		const dtMeshTile* tile = mesh->getTile(i);
+		if (!tile->header) continue;
+		// drawMeshTile(dd, mesh, 0, tile, flags);
+		//dtPolyRef base = m_navMesh->getPolyRefBase(tile);
+	
+		// int tileNum = m_navMesh->decodePolyIdTile(base);
+	
+		for (int m = 0; m < tile->header->polyCount; ++m)
+		{
+			const dtPoly* p = &tile->polys[m];
+			if (p->getType() == DT_POLYTYPE_OFFMESH_CONNECTION)	// Skip off-mesh links.
+				continue;
+			
+			const dtPolyDetail* pd = &tile->detailMeshes[m];
+	
+			// unsigned int col;
+			// if (query && query->isInClosedList(base | (dtPolyRef)i))
+			// 	col = duRGBA(255,196,0,64);
+			// else
+			// {
+			// 	if (flags & DU_DRAWNAVMESH_COLOR_TILES)
+			// 		col = tileColor;
+			// 	else
+			// 		col = duTransCol(dd->areaToCol(p->getArea()), 64);
+			// }
+		
+			for (int j = 0; j < pd->triCount; ++j)
+			{
+				const unsigned char* t = &tile->detailTris[(pd->triBase+j)*4];
+				for (int k = 0; k < 3; ++k)
+				{
+					if (faceIndex >= (outData.numOfF * 3))
+					{
+						std::cout << "faceIndex invalid" << faceIndex << std::endl;
+						return false;
+					}
+					outData.faces[faceIndex] = faceIndex;
+					faceIndex ++;
+					if ((count+3) > outData.numOfV * 3)
+					{
+						std::cout << "count invalid" << count << std::endl;
+						return false;
+					}
+					
+					if (t[k] < p->vertCount)
+					{	
+						outData.verts[count] = tile->verts[p->verts[t[k]]*3];
+						count ++;
+						outData.verts[count] = tile->verts[p->verts[t[k]]*3 + 1];
+						count ++;
+						outData.verts[count] = tile->verts[p->verts[t[k]]*3 + 2];
+						count ++;
+					}
+						
+						// dd->vertex(, col);
+					else
+					{
+						outData.verts[count] = tile->detailVerts[(pd->vertBase+t[k]-p->vertCount)*3];
+						count ++;
+						outData.verts[count] = tile->detailVerts[(pd->vertBase+t[k]-p->vertCount)*3 + 1];
+						count ++;
+						outData.verts[count] = tile->detailVerts[(pd->vertBase+t[k]-p->vertCount)*3 + 2];
+						count ++;
+					}
+						// dd->vertex(&tile->detailVerts[(pd->vertBase+t[k]-p->vertCount)*3], col);
+				}
+			}
+		}
+	}
+	
+	return true;
+}
+
+
+
 /////////////////////////////////////////////////
 //	class CRecastHelper
 /////////////////////////////////////////////////
@@ -666,6 +827,7 @@ CRecastHelper::~CRecastHelper()
 	for (map<int, CRecast*>::iterator iter = m_mapRecast.begin(); iter != m_mapRecast.end(); iter++)
 	{
 		delete iter->second;
+		iter->second = NULL;
 	}
 	m_mapRecast.clear();
 }

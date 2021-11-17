@@ -279,7 +279,7 @@ dtNavMesh* loadMapByBytes(const unsigned char* binary)
 
 dtNavMesh* loadMap(const char* path)
 {
-	/*
+	
 	FILE* fp = NULL;
 	errno_t error = fopen_s(&fp, path, "rb");
 	if (!fp) return 0;
@@ -347,7 +347,7 @@ dtNavMesh* loadMap(const char* path)
 	fclose(fp);
 
 	return mesh;
-	*/
+	/*
 	FILE* fp = NULL;
 	errno_t error = fopen_s(&fp, path, "rb");
 	if (!fp) return 0;
@@ -437,7 +437,7 @@ dtNavMesh* loadMap(const char* path)
 	}
 	
 	fclose(fp);
-	return m_navMesh;
+	return m_navMesh;*/
 }
 
 inline bool inRange(const float* v1, const float* v2, const float r, const float h)
@@ -696,12 +696,16 @@ dtStatus CRecast::SamplePosition(const float* spos, float maxDistance)
 
 	if (!m_startRef)
 	{
+		std::cout << "FUK U2" << std::endl;
 		return DT_FAILURE| DT_COORD_INVALID;
 	}
 	
 	dtPolyRef ref;
 	float pt[3];
 	dtStatus status = m_navQuery->findRandomPointAroundCircle(m_startRef, spos, maxDistance, &m_filter, frand, &ref, pt);
+	std::cout << pt[0] << std::endl;
+	std::cout << pt[1] << std::endl;
+	std::cout << pt[2] << std::endl;
 	memcpy(m_samplePos, pt, sizeof(m_samplePos));
 	return status;
 }

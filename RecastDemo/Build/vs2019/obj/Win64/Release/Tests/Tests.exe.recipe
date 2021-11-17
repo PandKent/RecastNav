@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>D:\YooZoo\recastnavigation\RecastDemo\Bin\Tests.exe</FullPath>
+      <FullPath>D:\Kent\RecastNav.git\RecastDemo\Bin\Tests.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

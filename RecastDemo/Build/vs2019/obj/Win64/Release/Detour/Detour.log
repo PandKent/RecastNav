@@ -1,0 +1,9 @@
+﻿  DetourAlloc.cpp
+  DetourAssert.cpp
+  DetourCommon.cpp
+  DetourNavMesh.cpp
+  DetourNavMeshBuilder.cpp
+  DetourNavMeshQuery.cpp
+  DetourNode.cpp
+  正在生成代码...
+  Detour.vcxproj -> D:\Kent\RecastNav.git\RecastDemo\Build\vs2019\lib\Release\Detour.lib

@@ -203,6 +203,9 @@
     <ClCompile Include="..\..\..\Recast\Source\RecastAlloc.cpp" />
     <ClCompile Include="..\..\..\Recast\Source\RecastArea.cpp" />
     <ClCompile Include="..\..\..\Recast\Source\RecastAssert.cpp" />
+    <ClCompile Include="..\..\..\Recast\Source\RecastAStar.cpp">
+      <Link>Source\RecastAStar.cpp</Link>
+    </ClCompile>
     <ClCompile Include="..\..\..\Recast\Source\RecastContour.cpp" />
     <ClCompile Include="..\..\..\Recast\Source\RecastFilter.cpp" />
     <ClCompile Include="..\..\..\Recast\Source\RecastLayers.cpp" />

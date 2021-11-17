@@ -5,6 +5,7 @@
 #else
 #define DllExport
 #endif
+#include "CRecastHelper.h"
 
 extern "C"
 {
@@ -130,4 +131,8 @@ extern "C"
 	/// <param name="id">地图Id</param>
 	/// <returns>返回采样点坐标</returns>
 	DllExport float* recast_getSamplePosition(int id);
+
+	DllExport bool recast_prepareCSharpNavMeshData(int id);
+
+	DllExport NavMeshOutData* recast_getCSharpNavMeshData(int id);
 }

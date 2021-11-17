@@ -166,6 +166,32 @@ rcCompactHeightfield::~rcCompactHeightfield()
 	rcFree(areas);
 }
 
+//ASTAR
+rcAStarGrid* rcAllocAStarGrid()
+{
+	return rcNew<rcAStarGrid>(RC_ALLOC_PERM);
+}
+
+void rcFreeAStarGrid(rcAStarGrid* asg)
+{
+	rcDelete(asg);
+}
+
+rcAStarGrid::rcAStarGrid()
+	: width(),
+    height(),
+	cellSize(),
+    gridsCount(),
+    grids()
+{
+}
+
+rcAStarGrid::~rcAStarGrid()
+{
+	rcFree(grids);
+}
+
+
 rcHeightfieldLayerSet* rcAllocHeightfieldLayerSet()
 {
 	return rcNew<rcHeightfieldLayerSet>(RC_ALLOC_PERM);

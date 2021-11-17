@@ -8,10 +8,20 @@
 static const int MAX_POLYS = 256;
 static const int MAX_SMOOTH = 2048;
 
+struct NavMeshOutData
+{
+	int numOfV;
+	int numOfF;
+	float* verts;
+	int* faces;
+};
+
 class CRecast
 {
 	dtNavMesh* m_navMesh;
 	dtNavMeshQuery* m_navQuery;
+
+	NavMeshOutData outData;
 
 	float m_spos[3];
 	float m_epos[3];
@@ -31,6 +41,7 @@ class CRecast
 public:
 
 	CRecast();
+	~CRecast();
 
 	bool LoadMap(const char* path);
 	bool LoadMapByBytes(const unsigned char* binary);
@@ -54,6 +65,10 @@ public:
 	float* fixPosition(const float* pos);
 	float* GetHitPosition() { return m_hitPos; }
 	float* GetSamplePosition() { return m_samplePos; }
+
+	bool PrepareCSharpNavMeshData();
+	NavMeshOutData GetCSharpNavMeshData() { return outData;}
+	NavMeshOutData* GetCSharpNavMeshDataPtr() { return &outData;}
 };
 
 class CRecastHelper

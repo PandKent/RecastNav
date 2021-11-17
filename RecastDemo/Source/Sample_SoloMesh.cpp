@@ -49,6 +49,7 @@ Sample_SoloMesh::Sample_SoloMesh() :
 	m_triareas(0),
 	m_solid(0),
 	m_chf(0),
+	m_asg(0),
 	m_cset(0),
 	m_pmesh(0),
 	m_dmesh(0),
@@ -70,6 +71,8 @@ void Sample_SoloMesh::cleanup()
 	m_solid = 0;
 	rcFreeCompactHeightfield(m_chf);
 	m_chf = 0;
+	rcFreeAStarGrid(m_asg);
+	m_asg = 0;
 	rcFreeContourSet(m_cset);
 	m_cset = 0;
 	rcFreePolyMesh(m_pmesh);
@@ -95,6 +98,11 @@ void Sample_SoloMesh::handleSettings()
 	if (imguiButton("Save"))
 	{
 		Sample::saveAll("solo_navmesh.bin", m_navMesh);
+	}
+
+	if(imguiButton("SaveAStar"))
+	{
+		Sample::saveAStar("solo_astar.bin",*m_asg);
 	}
 
 	if (imguiButton("Load"))
@@ -277,7 +285,12 @@ void Sample_SoloMesh::handleRender()
 	glDepthMask(GL_TRUE);
 	
 	if (m_chf && m_drawMode == DRAWMODE_COMPACT)
+	{
 		duDebugDrawCompactHeightfieldSolid(&m_dd, *m_chf);
+		//ASTAR
+		duDebugDrawAStarGrid(&m_dd, *m_asg, *m_chf);
+	}
+		
 
 	if (m_chf && m_drawMode == DRAWMODE_COMPACT_DISTANCE)
 		duDebugDrawCompactHeightfieldDistance(&m_dd, *m_chf);
@@ -393,6 +406,10 @@ bool Sample_SoloMesh::handleBuild()
 	memset(&m_cfg, 0, sizeof(m_cfg));
 	m_cfg.cs = m_cellSize;
 	m_cfg.ch = m_cellHeight;
+	//ASTAR
+	m_cfg.aStarGridSize = (int)m_gridSize;
+	m_cfg.minAStarGridSize = (int)m_gridMinSize;
+	
 	m_cfg.walkableSlopeAngle = m_agentMaxSlope;
 	m_cfg.walkableHeight = (int)ceilf(m_agentHeight / m_cfg.ch);
 	m_cfg.walkableClimb = (int)floorf(m_agentMaxClimb / m_cfg.ch);
@@ -512,6 +529,17 @@ bool Sample_SoloMesh::handleBuild()
 		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not erode.");
 		return false;
 	}
+
+	//ASTAR
+	// if(m_buildAStar)
+	// {
+		m_asg = rcAllocAStarGrid();
+		if(!rcBuildAStarData(m_ctx, m_cfg.aStarGridSize, m_cfg.minAStarGridSize, *m_chf, *m_asg))
+		{
+			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not split CompactHeight spans to AStar Grids.");
+			return false;
+		}
+	// }
 
 	// (Optional) Mark areas.
 	const ConvexVolume* vols = m_geom->getConvexVolumes();
@@ -636,6 +664,8 @@ bool Sample_SoloMesh::handleBuild()
 	{
 		rcFreeCompactHeightfield(m_chf);
 		m_chf = 0;
+		rcFreeAStarGrid(m_asg);
+		m_asg = 0;
 		rcFreeContourSet(m_cset);
 		m_cset = 0;
 	}
